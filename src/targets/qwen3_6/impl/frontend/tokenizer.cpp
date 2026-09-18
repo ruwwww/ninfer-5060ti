@@ -786,6 +786,17 @@ Tokenizer::Tokenizer(TokenizerResources resources) {
     bpe_merge_rules_        = load_bpe_merge_rules(model, tokenizer_label, vocab_token_to_id_);
     byte_token_ids_         = load_byte_token_ids(vocab_token_to_id_);
     default_stop_token_ids_ = load_default_stop_token_ids(resources.generation_config_json);
+
+    // Ensure <|im_end|> is always registered as a stop token for chat models
+    for (const auto& token : added_tokens_) {
+        if (token.content == "<|im_end|>") {
+            if (std::find(default_stop_token_ids_.begin(), default_stop_token_ids_.end(), token.id) ==
+                default_stop_token_ids_.end()) {
+                default_stop_token_ids_.push_back(token.id);
+            }
+            break;
+        }
+    }
 }
 
 std::vector<int> Tokenizer::encode(std::string_view text, EncodeOptions options) const {
